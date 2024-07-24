@@ -2,6 +2,7 @@ package com.fastcampus.loan.service;
 
 import com.fastcampus.loan.domain.Application;
 import com.fastcampus.loan.domain.Judgement;
+import com.fastcampus.loan.dto.ApplicationDTO;
 import com.fastcampus.loan.dto.JudgementDTO;
 import com.fastcampus.loan.repository.ApplicationRepository;
 import com.fastcampus.loan.repository.JudgementRepository;
@@ -129,6 +130,29 @@ public class JudgementServiceTest {
 
         judgementService.delete(1L);
         assertThat(judgmentEntity.getIsDeleted()).isTrue();
+    }
 
+    @Test
+    void Should_ReturnUpdateResponseOfExistApplicationEntity_When_RequestGrantApprovalAmountOfJudgementInfo() {
+        Judgement judgmentEntity = Judgement.builder()
+                .name("member A")
+                .applicationId(1L)
+                .approvalAmount(BigDecimal.valueOf(10000000))
+                .judgementId(1L)
+                .build();
+
+        Application applicationEntity = Application.builder()
+                .applicationId(1L)
+                .approvalAmount(BigDecimal.valueOf(10000000))
+                .build();
+
+        when(judgementRepository.findById(1L)).thenReturn(Optional.ofNullable(judgmentEntity));
+        when(applicationRepository.findById(1L)).thenReturn(Optional.ofNullable(applicationEntity));
+        when(applicationRepository.save(ArgumentMatchers.any(Application.class))).thenReturn(applicationEntity);
+
+        ApplicationDTO.GrantAmount actual = judgementService.grant(1L);
+
+        assertThat(actual.getApplicationId()).isEqualTo(1L);
+        assertThat(actual.getApprovalAmount()).isEqualTo(judgmentEntity.getApprovalAmount());
     }
 }
