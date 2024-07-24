@@ -49,22 +49,22 @@ public class ApplicationController extends AbstractController {
         return ok(applicationService.acceptTerms(applicationId, request));
     }
 
-    @PostMapping("/files")
-    public ResponseDTO<Void> upload(MultipartFile file) {
-        fileStorageService.save(file);
+    @PostMapping("/{applicationId}/files")
+    public ResponseDTO<Void> upload(@PathVariable Long applicationId, MultipartFile file) {
+        fileStorageService.save(applicationId, file);
         return ok();
     }
 
-    @GetMapping("/files")
-    public ResponseEntity<Resource> download(@RequestParam(value = "fileName") String fileName) {
-        Resource file = fileStorageService.load(fileName);
+    @GetMapping("/{applicationId}/files")
+    public ResponseEntity<Resource> download(@PathVariable Long applicationId, @RequestParam(value = "filename") String filename) {
+        Resource file = fileStorageService.load(applicationId, filename);
         return ResponseEntity.ok().header(HttpHeaders.CONTENT_DISPOSITION
                 , "attachment; filename=\"" + file.getFilename() + "\"").body(file);
     }
 
-    @GetMapping("/files/infos")
-    public ResponseDTO<List<FileDTO>> getFileInfos() {
-        List<FileDTO> fileInfos = fileStorageService.loadAll().map(path -> {
+    @GetMapping("/{applicationId}/files/infos")
+    public ResponseDTO<List<FileDTO>> getFileInfos(@PathVariable Long applicationId) {
+        List<FileDTO> fileInfos = fileStorageService.loadAll(applicationId).map(path -> {
             String fileName = path.getFileName().toString();
             return FileDTO.builder()
                     .name(fileName)
@@ -75,9 +75,9 @@ public class ApplicationController extends AbstractController {
         return ok(fileInfos);
     }
 
-    @DeleteMapping("/files")
-    public ResponseDTO<Void> deleteAll() {
-        fileStorageService.deleteAll();
+    @DeleteMapping("/{applicationId}/files")
+    public ResponseDTO<Void> deleteAll(@PathVariable Long applicationId) {
+        fileStorageService.deleteAll(applicationId);
         return ok();
     }
 }
