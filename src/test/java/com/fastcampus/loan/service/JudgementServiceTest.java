@@ -93,4 +93,28 @@ public class JudgementServiceTest {
         Response actual = judgementService.getJudgementOfApplication(1L);
         assertThat(actual.getJudgementId()).isEqualTo(1L);
     }
+
+    @Test
+    void Should_Return_UpdatedResponseOfExistJudgementEntity_When_RequestUpdateExistJudgementInfo() {
+        Judgement judgmentEntity = Judgement.builder()
+                .judgementId(1L)
+                .name("member A")
+                .approvalAmount(BigDecimal.valueOf(5000000))
+                .build();
+
+        Request request = Request.builder()
+                .name("member new")
+                .approvalAmount(BigDecimal.valueOf(10000000))
+                .build();
+
+
+        when(judgementRepository.findById(1L)).thenReturn(Optional.ofNullable(judgmentEntity));
+        when(judgementRepository.save(ArgumentMatchers.any(Judgement.class))).thenReturn(judgmentEntity);
+
+        Response actual = judgementService.update(1L, request);
+
+        assertThat(actual.getJudgementId()).isEqualTo(1L);
+        assertThat(actual.getName()).isEqualTo(request.getName());
+        assertThat(actual.getApprovalAmount()).isEqualTo(request.getApprovalAmount());
+    }
 }
