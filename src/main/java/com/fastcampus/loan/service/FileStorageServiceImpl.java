@@ -15,6 +15,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
+import java.util.stream.Stream;
 
 @Slf4j
 @Service
@@ -50,5 +51,15 @@ public class FileStorageServiceImpl implements FileStorageService {
         }
     }
 
-
+    @Override
+    public Stream<Path> loadAll() {
+        // 신청서류에 대한 정보를 받아온다.
+        // Files.walk에 경로와 depth를 넘겨주면, 그 경로에 있는 파일들을 depth 만큼 탐색 후 반환한다.
+        // 결론적으로 uploadPath에 있는 파일 리스트를 보여준다.
+        try {
+            return Files.walk(Paths.get(uploadPath), 1).filter(path -> !path.equals(Paths.get(uploadPath)));
+        } catch (Exception e) {
+            throw new BaseException(ResultType.SYSTEM_ERROR);
+        }
+    }
 }
