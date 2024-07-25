@@ -12,6 +12,7 @@ import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
 import java.util.Optional;
 
 import static com.fastcampus.loan.dto.EntryDTO.*;
@@ -42,6 +43,67 @@ public class EntryServiceImpl implements EntryService {
                         .build());
 
         return modelMapper.map(entry, Response.class);
+    }
+
+    @Override
+    public Response get(Long applicationId) {
+        Optional<Entry> entry = entryRepository.findByApplicationId(applicationId);
+
+        if (entry.isPresent()) {
+            return modelMapper.map(entry, Response.class);
+        } else {
+            return null;
+        }
+    }
+
+    @Override
+    public UpdateResponse update(Long entryId, Request request) {
+        // Entry 존재 여부
+        Entry entry = entryRepository.findById(entryId).orElseThrow(() -> {
+            throw new BaseException(ResultType.SYSTEM_ERROR);
+        });
+
+        // before -> after entry 금액 변경
+        BigDecimal beforeEntryAmount = entry.getEntryAmount();
+        entry.setEntryAmount(request.getEntryAmount());
+
+        entryRepository.save(entry);
+
+        // balance update
+        Long applicationId = entry.getApplicationId();
+        balanceService.update(applicationId,
+                BalanceDTO.UpdateRequest.builder()
+                        .beforeEntryAmount(beforeEntryAmount)
+                        .afterEntryAmount(request.getEntryAmount())
+                        .build());
+
+        return UpdateResponse.builder()
+                .entryId(entryId)
+                .applicationId(applicationId)
+                .beforeEntryAmount(beforeEntryAmount)
+                .afterEntryAmount(request.getEntryAmount())
+                .build();
+    }
+
+    @Override
+    public void delete(Long entryId) {
+        // Entry 존재 여부
+        Entry entry = entryRepository.findById(entryId).orElseThrow(() -> {
+            throw new BaseException(ResultType.SYSTEM_ERROR);
+        });
+
+        entry.setIsDeleted(true);
+        entryRepository.save(entry);
+
+        // balance 0으로 업데이트
+        BigDecimal beforeEntryAmount = entry.getEntryAmount();
+        Long applicationId = entry.getApplicationId();
+        balanceService.update(
+                applicationId,
+                BalanceDTO.UpdateRequest.builder()
+                        .beforeEntryAmount(beforeEntryAmount)
+                        .afterEntryAmount(BigDecimal.ZERO)
+                        .build());
     }
 
     private boolean isContractedApplication(Long applicationId) {
