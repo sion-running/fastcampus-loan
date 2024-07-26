@@ -18,6 +18,7 @@ import com.fastcampus.loan.dto.BalanceDTO.RepaymentRequest.RepaymentType;
 import com.fastcampus.loan.dto.RepaymentDTO.Request;
 import com.fastcampus.loan.dto.RepaymentDTO.Response;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -63,6 +64,39 @@ public class RepaymentServiceImpl implements RepaymentService {
     public List<ListResponse> get(Long applicationId) {
         List<Repayment> repayments = repaymentRepository.findAllByApplicationId(applicationId);
         return repayments.stream().map(r -> modelMapper.map(r, ListResponse.class)).collect(Collectors.toList());
+    }
+
+    @Override
+    public UpdateResponse update(Long repaymentId, Request request) {
+        Repayment repayment = repaymentRepository.findById(repaymentId).orElseThrow(() -> {
+            throw new BaseException(ResultType.SYSTEM_ERROR);
+        });
+
+        Long applicationId = repayment.getApplicationId();
+        BigDecimal beforeRepaymentAmount = repayment.getRepaymentAmount();
+
+        balanceService.repaymentUpdate(applicationId, BalanceDTO.RepaymentRequest.builder()
+                        .repaymentAmount(beforeRepaymentAmount)
+                        .type(RepaymentType.ADD)
+                        .build());
+
+        repayment.setRepaymentAmount(request.getRepaymentAmount());
+        repaymentRepository.save(repayment);
+
+        BalanceDTO.Response updatedBalance = balanceService.repaymentUpdate(applicationId, RepaymentRequest.builder()
+                .repaymentAmount(request.getRepaymentAmount())
+                .type(RepaymentType.REMOVE)
+                .build());
+
+        // 상환금 업데이트 결과 보여주기
+        return UpdateResponse.builder()
+                .applicationId(applicationId)
+                .beforeRepaymentAmount(beforeRepaymentAmount)
+                .afterRepaymentAmount(request.getRepaymentAmount())
+                .balance(updatedBalance.getBalance())
+                .createdAt(repayment.getCreatedAt())
+                .updatedAt(repayment.getUpdatedAt())
+                .build();
     }
 
     private boolean isRepayableApplication(Long applicationId) {
