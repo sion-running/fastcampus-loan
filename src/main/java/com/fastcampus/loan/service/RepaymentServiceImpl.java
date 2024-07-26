@@ -99,6 +99,25 @@ public class RepaymentServiceImpl implements RepaymentService {
                 .build();
     }
 
+    @Override
+    public void delete(Long repaymentId) {
+        Repayment repayment = repaymentRepository.findById(repaymentId).orElseThrow(() -> {
+            throw new BaseException(ResultType.SYSTEM_ERROR);
+        });
+
+        Long applicationId = repayment.getApplicationId();
+        BigDecimal removeRepaymentAmount = repayment.getRepaymentAmount();
+        // 상환금 삭제이므로 잔고를 더해준다
+        balanceService.repaymentUpdate(applicationId,
+                BalanceDTO.RepaymentRequest.builder()
+                        .repaymentAmount(removeRepaymentAmount)
+                        .type(RepaymentType.ADD)
+                        .build());
+
+        repayment.setIsDeleted(true);
+        repaymentRepository.save(repayment);
+    }
+
     private boolean isRepayableApplication(Long applicationId) {
         Optional<Application> existedApplication = applicationRepository.findById(applicationId);
         if (existedApplication.isEmpty()) {
