@@ -17,7 +17,7 @@ import java.math.BigDecimal;
 @DynamicInsert
 @DynamicUpdate
 @Where(clause = "is_deleted = false")
-public class Repayment {
+public class Repayment extends BaseEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(nullable = false, updatable = false)

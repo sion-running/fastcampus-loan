@@ -18,7 +18,9 @@ import com.fastcampus.loan.dto.BalanceDTO.RepaymentRequest.RepaymentType;
 import com.fastcampus.loan.dto.RepaymentDTO.Request;
 import com.fastcampus.loan.dto.RepaymentDTO.Response;
 
+import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import static com.fastcampus.loan.dto.RepaymentDTO.*;
 
@@ -55,6 +57,12 @@ public class RepaymentServiceImpl implements RepaymentService {
         response.setBalance(updatedBalance.getBalance());
 
         return response;
+    }
+
+    @Override
+    public List<ListResponse> get(Long applicationId) {
+        List<Repayment> repayments = repaymentRepository.findAllByApplicationId(applicationId);
+        return repayments.stream().map(r -> modelMapper.map(r, ListResponse.class)).collect(Collectors.toList());
     }
 
     private boolean isRepayableApplication(Long applicationId) {
